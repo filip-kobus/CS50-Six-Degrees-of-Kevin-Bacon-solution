@@ -62,10 +62,12 @@ def main():
     load_data(directory)
     print("Data loaded.")
 
-    source = person_id_for_name(input("Name: "))
+    #source = person_id_for_name(input("Name: "))
+    source = person_id_for_name('Kevin Bacon')
     if source is None:
         sys.exit("Person not found.")
-    target = person_id_for_name(input("Name: "))
+    #target = person_id_for_name(input("Name: "))
+    target = person_id_for_name('Cary Elwes')
     if target is None:
         sys.exit("Person not found.")
 
@@ -92,9 +94,54 @@ def shortest_path(source, target):
     If no possible path, returns None.
     """
 
-    # TODO
-    raise NotImplementedError
+    explored_movies = set()
 
+    source_movies = people[source]['movies']
+    target_movies = people[target]['movies']
+
+    movies_frontier = QueueFrontier()
+
+    for movie in source_movies:
+        node = Node(state=movie, parent=None, action=source)
+        movies_frontier.add(node)
+
+    while True:
+
+        if movies_frontier.empty():
+            return None
+
+        curr_movie = movies_frontier.remove()
+
+        if curr_movie.state in target_movies:
+            node = Node(state=curr_movie.state, parent=curr_movie, action=target)
+            break
+
+
+        for actor in movies[curr_movie.state]['stars']:
+            for next_movie in people[actor]['movies']:
+                if next_movie not in explored_movies:
+                    node = Node(state=next_movie, parent=curr_movie, action=actor)
+                    movies_frontier.add(node)
+
+        explored_movies.add(curr_movie)
+
+    return get_pairs(node)
+
+def get_pairs(node):
+    result = []
+    pair = []
+
+    while node.parent:
+        if node.state:
+            pair.append(node.parent.state)
+            pair.append(node.action)
+            result.insert(0, pair)
+
+        node = node.parent
+
+        pair = []
+
+    return result
 
 def person_id_for_name(name):
     """
