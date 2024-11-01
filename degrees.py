@@ -1,7 +1,7 @@
 import csv
 import sys
 
-from util import Node, StackFrontier, QueueFrontier
+from util import Node, QueueFrontier
 
 # Maps names to a set of corresponding person_ids
 names = {}
@@ -62,12 +62,10 @@ def main():
     load_data(directory)
     print("Data loaded.")
 
-    #source = person_id_for_name(input("Name: "))
-    source = person_id_for_name('Kevin Bacon')
+    source = person_id_for_name(input("Name: "))
     if source is None:
         sys.exit("Person not found.")
-    #target = person_id_for_name(input("Name: "))
-    target = person_id_for_name('Cary Elwes')
+    target = person_id_for_name(input("Name: "))
     if target is None:
         sys.exit("Person not found.")
 
@@ -85,7 +83,6 @@ def main():
             movie = movies[path[i + 1][0]]["title"]
             print(f"{i + 1}: {person1} and {person2} starred in {movie}")
 
-
 def shortest_path(source, target):
     """
     Returns the shortest list of (movie_id, person_id) pairs
@@ -94,54 +91,40 @@ def shortest_path(source, target):
     If no possible path, returns None.
     """
 
-    explored_movies = set()
+    explored_pairs = set()
+    frontier = QueueFrontier()
 
-    source_movies = people[source]['movies']
-    target_movies = people[target]['movies']
-
-    movies_frontier = QueueFrontier()
-
-    for movie in source_movies:
-        node = Node(state=movie, parent=None, action=source)
-        movies_frontier.add(node)
+    first_node = Node(state=(None, source), parent=None)
+    frontier.add(first_node)
 
     while True:
-
-        if movies_frontier.empty():
+        if frontier.empty():
             return None
 
-        curr_movie = movies_frontier.remove()
+        current_node = frontier.remove()
+        movie_actor_pair = current_node.state
+        actor_id = movie_actor_pair[1]
 
-        if curr_movie.state in target_movies:
-            node = Node(state=curr_movie.state, parent=curr_movie, action=target)
+        if actor_id == target:
             break
 
+        neighbors = neighbors_for_person(actor_id)
 
-        for actor in movies[curr_movie.state]['stars']:
-            for next_movie in people[actor]['movies']:
-                if next_movie not in explored_movies:
-                    node = Node(state=next_movie, parent=curr_movie, action=actor)
-                    movies_frontier.add(node)
+        for neighbor in neighbors:
+            if neighbor not in explored_pairs:
+                node = Node(state=neighbor, parent=current_node)
+                frontier.add(node)
 
-        explored_movies.add(curr_movie)
+        explored_pairs.add(movie_actor_pair)
 
-    return get_pairs(node)
-
-def get_pairs(node):
     result = []
-    pair = []
-
-    while node.parent:
-        if node.state:
-            pair.append(node.parent.state)
-            pair.append(node.action)
-            result.insert(0, pair)
-
-        node = node.parent
-
-        pair = []
+    while current_node.parent is not None:
+        movie_actor_pair = current_node.state
+        result.insert(0, movie_actor_pair)
+        current_node = current_node.parent
 
     return result
+
 
 def person_id_for_name(name):
     """
